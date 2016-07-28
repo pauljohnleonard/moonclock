@@ -1,3 +1,7 @@
+// Lunar Clock Arduino code
+// P.J.Loeanrd 2016
+// https://github.com/pauljohnleonard/moonclock
+//---------------------------------------------------
 
 #include "phase.h"
 #include "moon.h"
@@ -8,7 +12,6 @@
 #include "bluetooth.h"
 #include "myio.h"
 #include "eeprom.h"
-
 
 
 void update_moon_state() {
@@ -27,7 +30,7 @@ void loop() {
 
   update_moon_state();
 
-  if (RUNNING) {
+  if (RUNNING) {   // don't try to use the phase system if not RUNNING.
     phase_set(moon_phase);
     tilt_set(moon_tilt, 1000);      // limit servo time to 200 millis (Note return straight away);
   } else {
@@ -42,15 +45,11 @@ void setup() {
 
   Serial.begin(9600);
 
-  bool USE_SOFT_SERIAL = false; // but you may get servo jitters during coms if servo is attached.
-
-  if (USE_SOFT_SERIAL) {
-    bluetooth_setup();
-    serial = &BTSerial;
-  } else {
-    // Define the main
-    serial = & Serial;
-  }
+  // but you may get servo jitters during coms if servo is attached.
+  //   bluetooth_setup();
+  //   serial = &BTSerial;
+  
+  serial = & Serial;
 
   // restore sved state from EEPROM
   eeprom_read();
@@ -58,7 +57,9 @@ void setup() {
   // initialize phase table.
   data_setup();
 
+
   delay(500);
+
   tilt_setup();
   phase_setup();
   update_moon_state();
@@ -66,7 +67,7 @@ void setup() {
   ui_welcome();
   ui_printError();
   myprintf("\n>");
-
+  
 }
 
 
