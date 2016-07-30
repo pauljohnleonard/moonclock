@@ -5,6 +5,8 @@
 
 void data_setup();
 
+void data_inc();
+void data_dec();
 
 // Set the current date using julian hours   24* (julian day)   Duhh!!!
 void data_setIndexAt(long jh);      

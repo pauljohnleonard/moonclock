@@ -6,6 +6,7 @@
 
 extern int phase_sense1;
 extern int phase_sense2;
+extern bool PHASE_BROKEN;
 
 void phase_test();
 

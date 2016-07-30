@@ -16,20 +16,20 @@ float moon_alt;
 float season_ang;
 
 // return phase of moon given calendar time
-static float get_moon_phaseRad(MyTime tm) {
+static float get_moon_phaseRad(MyTime &tm) {
 
-
-
+  
   long jhPrev = data_jh_prev();
   long jhNext = data_jh_next();
 
   long dJH = jhNext - jhPrev;
 
-  long bJH = tm.JH - jhPrev;
+  long bJH = tm.getJH() - jhPrev;
 
-  float ang = M_PI * bJH / dJH;
+  float ang = M_PI * (bJH+tm.getMinute()/60.) / dJH;
 
   if (data_isWaxing()) return ang;
+  
   else return ang - M_PI;
 
 }
@@ -128,17 +128,23 @@ void _testCase(int i,float &angOfTilt,float &tilt,float &latitude,float &angOfMo
   }
 }
 
-//  angOfMoon relative to new moon
+
+
+
+//  angOfMoon relative to new moon in deg  e.g. 0 is new 180 is full  90 is first quarter
 //
 static void  set_moon_tilt(MyTime t, float angOfMoon)
 
 {
 
-  static const float timeTiltRef     = mytime_dayOfYear(mytime_makeTime(2000, 12, 21, 0));    //  when tilt away from sun (north hemi) is MAX (winter solstice)
+  // TODO improve me
+  static MyTime winterSoltice(2000, 12, 21, 0,0,0);
+  static const float timeTiltRef = winterSoltice.dayOfYear();    //  when tilt away from sun (north hemi) is MAX (winter solstice)
+
   
   static float latitude = 51.2308 * deg2rad;  //  degrees from equator  (deg).
   static float tilt = 23.44 * deg2rad;       //  earths axis tilt from (deg).
-  static const float julianYear = 365.25;                      //   ?? is this right ?
+  static const float julianYear = 365.24;                      //   ?? is this right ?
 
 
   // ang of Full moon is reference (zero)
@@ -148,8 +154,8 @@ static void  set_moon_tilt(MyTime t, float angOfMoon)
 
   angOfMoon += M_PI;
 
-  float timeOfDay    =  (t.Hour + (t.Minute + t.Second / 60.0) / 60.0) / 24.0 ;   // hours from midnight
-  float timeOfSeason =  mytime_dayOfYear(t) - timeTiltRef;                        // days after winter solstice
+  float timeOfDay    =  t.getFractionOfDay();                  // 0 - 1 from midnight
+  float timeOfSeason =  t.dayOfYear() - timeTiltRef;           // days after winter solstice
   if (timeOfSeason < 0) timeOfSeason += 365.25;
 
   float angOfDay  = timeOfDay * 2 * M_PI;                    // rotation of earth  from midnight in rads
@@ -200,14 +206,12 @@ static void  set_moon_tilt(MyTime t, float angOfMoon)
 
   POV.rotZ(angOfTilt);
 
-  // NOW POV IS IN IT'S REAL POSITION AND CORDINATE IS  AS START OF CALC.
-
-
+  // NOW POV IS IN IT'S REAL POSITION .
 
   // Transform  coordinate system about Z AXIS  such that new X  is towards the moon.
   // e.g. rotate cordinate by angOfMoon  (or rotate system by -angMoon)
   // POV_x gives us angle between our vertical and direction to the moon  1 is directly overhead  0 is on horizon
-  // The  angle of the phase axis is given by Vmy and Vmz
+  // The angle of the phase axis is given by Vmy and Vmz
 
   POV.rotZ(-angOfMoon);
 
@@ -219,13 +223,10 @@ static void  set_moon_tilt(MyTime t, float angOfMoon)
 
 }
 
-
 // sets up global variables moon_phase and moon_tilt
 
-void moon_updateState(MyTime t) {
-
-  mytime_setJHfromCal(t);
-  data_setIndexAt(t.JH);
+void moon_updateState(MyTime &t) {
+  data_setIndexAt(t.getJH());
   float ang = get_moon_phaseRad(t);
   set_moon_tilt(t, ang);
   moon_phase = 180.*ang / M_PI;
@@ -234,22 +235,35 @@ void moon_updateState(MyTime t) {
 
 void moon_printTable(MyTime t, int n,int incHr) {
 
-  mytime_setJHfromCal(t);
-
   myprintf(F(" Date        time    season       phase      tilt      alt \n"));
 
   for (int i = 0; i < n ; i++) {
+    if (ui_poll_break()) return;
     moon_updateState(t);
-    ui_printTime(NULL, t);
+    t.print(NULL);
     myprintf(F(" %s "), myf2str(season_ang));
     myprintf(F(" %s "), myf2str(moon_phase));
     myprintf(F(" %s "), myf2str(moon_tilt));
     myprintf(F(" %s \n"), myf2str(moon_alt));
     
+    t=MyTime(t.getJH()+incHr,t.getMinute(),t.getSecond());
+  }
+}
 
-    t.JH += incHr;
-    mytime_setCalfromJH(t);
-    
+void moon_halfTable(int n) {
+ 
+  for (int i = 0; i < n ; i++) {
+    if (ui_poll_break()) return;
+    MyTime tp = MyTime(data_jh_prev(), 0, 0);
+ 
+    if (data_isWaxing()) {
+      tp.printJD(F("  New: "));
+      myprintln();
+    } else {
+       tp.printJD(F(" Full: "));
+       myprintln();
+    }
+    data_inc(); 
   }
 }
 

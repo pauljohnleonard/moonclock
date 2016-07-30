@@ -9,54 +9,47 @@
 #include "ui.h"
 #include "mytime.h"
 #include "data.h"
-#include "bluetooth.h"
 #include "myio.h"
 #include "eeprom.h"
 
 
 void update_moon_state() {
 
-  MyTime t;
-  mytime_read(t);
-  mytime_setJHfromCal(t);
-  data_setIndexAt(t.JH);
+  MyTime t=MyTime();
+  data_setIndexAt(t.getJH());
   moon_updateState(t);
+
 }
 
 
 void loop() {
 
+  // poll for user interaction
   ui_poll();
+  
+  update_moon_state();                           // use the RTC to update the moon model.
 
-  update_moon_state();
-
-  if (RUNNING) {   // don't try to use the phase system if not RUNNING.
-    phase_set(moon_phase);
-    tilt_set(moon_tilt, 1000);      // limit servo time to 200 millis (Note return straight away);
+  // If the system is running set tilt and phase
+  if (RUNNING) {                                // don't try to use the phase system if not RUNNING. 
+    tilt_set(moon_tilt, 1000);                  // limit servo time to 200 millis (Note return straight away);
+    if (!tilt_running()) phase_set(moon_phase); // Don't try to set phase if the tilt servo is active. 
   } else {
-    phase_halt();
-    tilt_set(ui_tilt, 500);
+    tilt_set(ui_tilt, 500);                     // SYstem not running so set tilt the user set value.
   }
-
 }
 
 
 void setup() {
 
   Serial.begin(9600);
-
-  // but you may get servo jitters during coms if servo is attached.
-  //   bluetooth_setup();
-  //   serial = &BTSerial;
-  
+ 
   serial = & Serial;
-
+  
   // restore sved state from EEPROM
   eeprom_read();
 
   // initialize phase table.
   data_setup();
-
 
   delay(500);
 

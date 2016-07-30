@@ -11,6 +11,7 @@
 int phase_sense1;
 int phase_sense2;
 
+bool PHASE_BROKEN=false;
 
 void phase_test() {
 
@@ -37,16 +38,25 @@ void phase_test() {
   phase_halt();
 }
 
+#define CALIB_TIME 100000
+
 void phase_calibrate() {
  
   int max1 = 0, min1 = 1024, max2 = 0, min2 = 1024;
   phase_forward();
   bool calibrtating = true;
+  myprintf(F("Calibrating phase sensors please wait 100 secs  ... \n "));
+  
   long tNow = millis();
-
-  while ((millis() - tNow) < 100000 ) {
+  long DT = CALIB_TIME/100;
+  long tNext=tNow+DT;
+  
+  while ((millis() - tNow) < CALIB_TIME ) {
+    
+    if (ui_poll_break()) return;
+    
     int v1 = analogRead(SENS1_PIN);
-
+  
     min1 = min(v1, min1);
     max1 = max(v1, max1);
 
@@ -54,7 +64,10 @@ void phase_calibrate() {
 
     min2 = min(v2, min2);
     max2 = max(v2, max2);
-
+    if (  millis() >= tNext) {
+       myprintf(F(".")); 
+       tNext+=DT;
+    }
   }
 
   phase_halt();
@@ -64,6 +77,10 @@ void phase_calibrate() {
   sensor2_min = min2;
   sensor2_max = max2;
 
+  myprintln();
+  myprintf(F("\n Sensors range  : %d->%d  %d->%d\n"), sensor1_min, sensor1_max, sensor2_min, sensor2_max);
+  myprintf(F(" Write to eprom (W) to keep \n")); 
+  
 }
 
 
@@ -96,8 +113,8 @@ void phase_back() {
 
 void phase_set(int phaseNew) {
 
-  if (!RUNNING) return;
-  
+  if (PHASE_BROKEN) return;
+ 
   int state = 0;
 
   phaseNew = ang_wrap(phaseNew);
@@ -109,7 +126,7 @@ void phase_set(int phaseNew) {
   int diff = round(ang_wrap(phaseNew - phase));
 
   if ( (diff > 2*TOL ) || (diff < -2*TOL) ) {
-    myprintf(F("Setting phase to %d \n"), phaseNew);
+    myprintf(F("Setting phase to %d  . . .    "), phaseNew);
   } else {
     return;
   }
@@ -124,6 +141,7 @@ void phase_set(int phaseNew) {
     if (ui_poll_break()) {
       phase_halt();
       RUNNING=false;     // stop running to allow user to tweak
+      PHASE_BROKEN=true;
       return;
     }
     
@@ -137,7 +155,7 @@ void phase_set(int phaseNew) {
       if (state != 1) {
         phase_forward();
       }
-      if (doPrint) myprintf(F("\r> %3d >"), (int)round(phase));
+      if (doPrint) myprintf(F("\b\b\b\b\b\b%3d ->"), (int)round(phase));
       state = 1;
 
     } else if (diff < -TOL) {
@@ -145,12 +163,11 @@ void phase_set(int phaseNew) {
       if ( state != -1) {
         phase_back();
       }
-      if (doPrint) myprintf(F("\r< %3d <"), (int)round(phase));
+      if (doPrint) myprintf(F("\b\b\b\b\b\b%3d <-"), (int)round(phase));
       state = -1;
     } else {
- 
       phase_halt();
-      myprintf(F("\r* %3d *  \n>"), (int)round(phase));
+      myprintf(F("\n * %3d * \n>"), (int)round(phase));
       state = 0;
       return;
     }
@@ -159,6 +176,7 @@ void phase_set(int phaseNew) {
     
     if (millis()-t1 > PHASE_SET_TIME_LIMIT) {
       ui_fatal(F("Phase set time limit reached. Check Phase drive system.")); 
+      PHASE_BROKEN = true;
       return;
     }
   }

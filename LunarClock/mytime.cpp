@@ -4,18 +4,25 @@
 
 #include "mytime.h"
 #include "ui.h"
+#include "myio.h"
 
-int mytime_dayOfYear(MyTime t) {
-  
-  int days=t.Day;
-  
-  for (int m=1;m<t.Month;m++) {
-      days+=mytime_daysInMonth(m,t.Year);
+int MyTime::dayOfYear() {
+
+  int days = Day;
+
+  for (int m = 1; m < Month; m++) {
+    days += mytime_daysInMonth(m, Year);
   }
 
   return days;
-  
+
 }
+
+//
+//void MyTime::addToJH(int incHr) {
+//    t.JH += incHr;
+//    setCalfromJH(t.Minute,t.Second);
+//}
 
 int mytime_daysInMonth(int month, int year)
 {
@@ -37,13 +44,13 @@ int mytime_daysInMonth(int month, int year)
 
 // See: http://jtds.sourceforge.net/doc/net/sourceforge/jtds/jdbc/DateTime.html
 
-void mytime_setJHfromCal(MyTime &t)
+void MyTime::setJHfromCal()
 {
-  int YEAR=t.Year;
-  int MONTH=t.Month;
-  int DAY=t.Day;
-  int HOUR=t.Hour;
-  
+  int YEAR = this->Year;
+  int MONTH = this->Month;
+  int DAY = this->Day;
+  int HOUR = this->Hour;
+
   long I, J, K, JD;
 
   I = YEAR;
@@ -53,22 +60,30 @@ void mytime_setJHfromCal(MyTime &t)
   JD = K - 32075 + 1461 * (I + 4800 + (J - 14) / 12) / 4 + 367 * (J - 2 - (J - 14) / 12 * 12) / 12 - 3 * ((I + 4900 + (J - 14) / 12) / \
        100) / 4;
 
-  t.JH = JD * 24 + HOUR - 12;
+ 
+  this->JH = JD * 24 + HOUR - 12;
+
 }
 
 
 
+MyTime::MyTime(long JH1, int mins, int secs) {
 
-void  mytime_setCalfromJH(MyTime &t)
-{
+// BUGGY HERE
+
   long I, J, K, L, N, JD;
-  long JH=t.JH;
-  JH=JH+12;
-  JD = JH / 24;
-  t.Hour = JH % 24;
-  t.Minute=0;
-  t.Second=0;
+
+  this->JH = JH1;
+
+  JH1 = JH1 + 12;
+
+  JD = JH1 / 24;
   
+  Hour = JH1 % 24;
+  
+  Minute = mins;
+  Second = secs;
+
   L = JD + 68569;
   N = 4 * L / 146097;
   L = L - (146097 * N + 3) / 4;
@@ -80,97 +95,127 @@ void  mytime_setCalfromJH(MyTime &t)
   J = J + 2 - 12 * L;
   I = 100 * (N - 49) + I + L;
 
-  t.Year = I;
-  t.Month = J;
-  t.Day = K;
-  
+  Year = I;
+  Month = J;
+  Day = K;
+
+  MyTime t2=MyTime(I,J,K,Hour,Minute,Second);
+
+  if (t2.JH != JH) {
+    myprintf(F(" Bug in MyTime constructor from JH\n"));
+    printJD(F("A "));
+    t2.printJD(F("\nB "));
+    myprintln();    
+  }
+
 }
 
 
-MyTime mytime_makeTime(int y,int m,int d,int h) {
-  MyTime t;
-  t.Minute=t.Second=0;
-  t.Year=y;
-  t.Month=m;
-  t.Day=d;
-  t.Hour=h;
-  return t;
+MyTime::MyTime(int y, int m, int d, int h,int minute,int second) {
+
+  Minute = minute;
+  Second = second;
+  Year = y;
+  Month = m;
+  Day = d;
+  Hour = h;
+  setJHfromCal();
 }
-//
-//void mytime_test() {
-//
-//  int YEAR,MONTH,DAY,HOUR;
-//  for (int y = 2016; y < 2090; y++) {
-//    Serial.println(".");
-//    for (int m = 1; m < 13; m++) {
-//      for (int d = 1; d <= mytime_daysInMonth(m, y); d++) {
-//        for (int h = 0; h < 24; h++) {
-//            
-//            long JH=mytime_cal2JH(mytime_makeTime(y,m,d,h));
-//            MyTime t;
-//            mytime_JH2Cal(JH, t);
-//            if (t.Year !=y || t.Day != d || t.Month != m || t.Day !=d || t.Hour != h) {
-//             
-//                Serial.println("  EEEEK ");            
-//            } else {
-//             // 
-//            }
-//        }
-//      }
-//
-//    }
-//  }
-//
 
-// }
+void MyTime::parseStr(char *str) {
 
-bool mytime_read(MyTime &t) {
+  char *tok = strtok(str, " ");
+  tok = strtok(NULL, " ");
+  if (tok == NULL) return;
+  Year = atoi(tok);
+  tok = strtok(NULL, " ");
+  if (tok == NULL) return;
+  Month = atoi(tok);
+  tok = strtok(NULL, " ");
+  if (tok == NULL) return;
+  Day = atoi(tok);
+  tok = strtok(NULL, " ");
+  if (tok == NULL) return;
+  Hour = atoi(tok);
+  tok = strtok(NULL, " ");
+  if (tok == NULL) return;
+  Minute = atoi(tok);
+  tok = strtok(NULL, " ");
+  if (tok == NULL) return;
+  Second = atoi(tok);
+}
+
+MyTime::MyTime(char *str) {
+
+  Year = Month = Day = Hour = Minute = Second = 0;
+  parseStr(str);
+  setJHfromCal();
+}
+
+MyTime::MyTime() {
   tmElements_t tm;
-  if (RTC.read(tm)) {
 
-    t.Year = tmYearToCalendar(tm.Year);
-    t.Month = tm.Month;
-    t.Day = tm.Day;
-    t.Hour = tm.Hour;
-    t.Second = tm.Second;
-    t.Minute = tm.Minute;
-    return true;
+  if (RTC.read(tm)) {
+    Year = tmYearToCalendar(tm.Year);
+    Month = tm.Month;
+    Day = tm.Day;
+    Hour = tm.Hour;
+    Second = tm.Second;
+    Minute = tm.Minute;
+    setJHfromCal();
+    return;
   }
 
 
   if (RTC.chipPresent()) {
-    ui_fatal(F("The DS1307 is stopped. \n"));
+    ui_fatal(F("The RTC is stopped. Unable to read time \n"));
   } else {
-    ui_fatal(F("DS1307 read error!  Please check the circuitry. \n"));
+    ui_fatal(F("RTC read error!  Is it connected? Please check the circuitry. \n"));
   }
-
-  return  false;
 
 }
 
-bool mytime_write(MyTime tm) {
+bool MyTime::write() {
 
   tmElements_t t;
 
-  t.Year = CalendarYrToTm(tm.Year);
-  t.Month = tm.Month;
-  t.Day = tm.Day;
-  t.Hour = tm.Hour;
-  t.Minute = tm.Minute;
-  t.Second = tm.Second;
-
+  t.Year = CalendarYrToTm(Year);
+  t.Month = Month;
+  t.Day = Day;
+  t.Hour = Hour;
+  t.Minute = Minute;
+  t.Second = Second;
 
   if (RTC.write(t)) return true;
-  
-  
-  if (RTC.chipPresent()) {   
-    ui_fatal(F("The DS1307 is stopped. \n"));
+
+
+  if (RTC.chipPresent()) {
+    ui_fatal(F("The RTC is stopped. Unable to write time."));
   } else {
-    ui_fatal(F("DS1307 read error!  Please check the circuitry. \n"));
+    ui_fatal(F("RTC write error! Is it connected?  Please check the circuitry."));
   }
- 
+
   return false;
 }
 
 
 
+void MyTime::print(const __FlashStringHelper  *tag) {
+
+  if (tag != NULL)  myprintf(tag);
+  myprintf(F("%02d/%02d/%04d %2d:%02d:%02d"), Day, Month, Year, Hour, Minute, Second);
+
+}
+
+
+void MyTime::printJD(const __FlashStringHelper  *tag) {
+
+  print(tag);
+
+  long JD = JH / 24;
+  long hrs = JH % 24;
+  
+  int  milliDay = round(1000.0 * (hrs + Minute / 60.0) / 24.0);
+  myprintf(F(" JD=%ld.%03d "), JD, milliDay);
+
+}

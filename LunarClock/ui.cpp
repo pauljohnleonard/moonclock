@@ -5,7 +5,6 @@
 #include "global.h"
 #include "mytime.h"
 #include "data.h"
-#include "bluetooth.h"
 #include "myio.h"
 #include "eeprom.h"
 #include "moon.h"
@@ -13,7 +12,11 @@
 
 bool RUNNING = true;  // System is up and running
 bool BREAK = false;   // Something wants to halt the system (or has det RUNNING false) so report it.
-float ui_tilt=0.0;
+
+// These values are used when the system is not running so we can test.
+int ui_tilt  = 0;
+int ui_phase = 0;
+
 //  Max line length for UI input
 #define MAX_CHAR 60
 
@@ -44,34 +47,26 @@ bool ui_hasError() {
 }
 
 
-void ui_printTime(const __FlashStringHelper  *tag, MyTime tm) {
-
-  if (tag != NULL)  myprintf(tag);
-  myprintf(F("%02d/%02d/%04d  %2d:%02d:%02d"), tm.Day, tm.Month, tm.Year, tm.Hour, tm.Minute, tm.Second);
-
-}
-
-
 void ui_prompt() {
-  MyTime t;
-  mytime_read(t);
+  MyTime t = MyTime();
 
   ui_printError();
-  
-  ui_printTime(F("\n"), t);
-  myprintf("\n>");
+
+  t.printJD(F("\n"));
+  myprintln();
+  if (!RUNNING)     myprintf(F("*!*  SYSTEM IS NOT RUNNING           *!*\n"));
+  if (PHASE_BROKEN) myprintf(F("*!*  PHASE SYSTEM BROKEN FLAG IS SET *!*\n"));
+  myprintf(">"); 
 }
 
 
 void _ui_printState() {
 
 
-
-  MyTime t, tp, tn;
-  mytime_read(t);
+  MyTime t = MyTime();
   moon_updateState(t);
 
-  
+
   float phaseAng = phase_read();
 
   myprintf(F("** PHASE DRIVE SYSTEM\n"));
@@ -80,25 +75,23 @@ void _ui_printState() {
   myprintf(F(" Sensor state   : ang=%s v1=%d v2=%d \n"), myf2str(phaseAng), phase_sense1, phase_sense2);
 
   myprintf(F("** TILT DRIVE SYSTEM\n"));
-  myprintf(F(" servo state    : %d->%d->%d\n"), tilt_PosDown, servo_pos,tilt_PosUp);
+  myprintf(F(" servo state    : %d->%d->%d\n"), tilt_PosDown, servo_pos, tilt_PosUp);
 
 
   myprintf(F("** LUNAR \n"));
   myprintf(F("       JH index : %d\n"), data_index());
 
-  tp.JH = data_jh_prev();
-  mytime_setCalfromJH(tp);
+  MyTime tp = MyTime(data_jh_prev(), 0, 0);
 
-  tn.JH = data_jh_next();
-  mytime_setCalfromJH(tn);
+  MyTime tn = MyTime(data_jh_next(), 0, 0);
 
   if (data_isWaxing()) {
-    ui_printTime(F("  Prev New:"), tp); 
-    ui_printTime(F("\n Next Full:"), tn);
+    tp.print(F("  Prev New:"));
+    tn.print(F("\n Next Full:"));
     myprintln();
   } else {
-    ui_printTime(F(" Prev Full: "), tp);
-    ui_printTime(F("\n  Next New: "), tn);
+    tp.print(F(" Prev Full: "));
+    tn.print(F("\n  Next New: "));
     myprintln();
   }
 
@@ -108,13 +101,6 @@ void _ui_printState() {
   myprintf(F(" season ang     : %s \n"), myf2str(season_ang));
 
 
-
-  if (RUNNING) {
-    myprintf(F("\n\n** SYSTEM IS RUNNING\n\n"));
-  } else {
-    myprintf(F("\n\n** SYSTEM IS NOT RUNNING \n\n"));
-  }
-
   ui_printError();
 
 }
@@ -122,100 +108,115 @@ void _ui_printState() {
 void ui_welcome() {
 
   myprintf(F("\n\n"
-             "********* Lunar Clock *******************\n"));
-  myprintf(F("* P.J.Leonard and G.Burgess %s *\n"),__DATE__);
-  myprintf(F("*****************************************\n\n"));
+             "********* Lunar Clock **************************\n"));
+  myprintf(F("*    P.J.Leonard and G.Burgess %s     *\n"), __DATE__);
+  myprintf(F("* https://github.com/pauljohnleonard/moonclock *\n"));
+  myprintf(F("************************************************\n\n"));
 
   data_welcome();
   _ui_printState();
 
   myprintf( F("** SETUP \n"));
   myprintf( F("Set time (GMT) : D year month day hour [minute [sec]] \n"));
-  
-  myprintf( F("Phase offset   : P degree\n"));
-  myprintf( F("Tilt 900-2100us: t min max\n"));
-  myprintf( F("PhaseSensor Cal: C \n"));
+
+  myprintf( F("Phase offset   : O degree\n"));
+  myprintf( F("Servo range(us): t min max\n"));
+  myprintf( F("PhaseSensor Cal: C\n"));
   myprintf( F("Write to EEPROM: W\n"));
 
-  myprintf( F("** MISC \n"));  
+
+  myprintf( F("** MISC \n"));
+
+  myprintf( F("Full/New Moons : M n \n"));
   myprintf( F("Lunar table    : L [N incHour year month day hour minute sec] \n"));
   myprintf( F("Halt system    : H \n"));
+  myprintf( F("Manual Tilt    : T deg \n"));
+  myprintf( F("Manual Phase   : P deg \n"));
   myprintf( F("Reset and Run  : R \n"));
-  myprintf( F("Clear error    : C \n"));
-  myprintf( F("Help(this)     : ?\n"));
+  myprintf( F("Clear error    : ! \n"));
+  myprintf( F("Help(this)     : ? \n"));
 
 }
 
+static int in_range(int min1,int max1,int val) {
+  return max(min(max1,val),min1);
+}
 
 // Process a line.
 static void ui_command(char *cmd) {
 
-  
+
   char *tok;
 
-  MyTime tm;
-  mytime_read(tm);
-  int n = 1, incHr=1;
+  MyTime tm = MyTime();
+  int n = 1, incHr = 1;
 
   int  phaseOff, d, u, tmp;
 
-  tok = strtok(cmd, " :");
-  
+
   myprintln();
+
   
-  //  Serial.print("#");
-  //  Serial.print(tok);
-  //  Serial.println("#");
-  //
- 
-  switch (tok[0]) {
+  switch (cmd[0]) {
 
+    case 'M':
+      tok = strtok(cmd, " :");
+      tok = strtok(NULL, " ");
+      if (tok == NULL) {
+        n=10;
+      } else {
+        n = in_range(1,200,atoi(tok));
+      }
+      moon_halfTable(n);
+      break;
+      
     case 'C':
-      error_mess=NULL;
+      phase_calibrate();
       break;
-      
+
+    case '!':
+      error_mess   =  NULL;
+      PHASE_BROKEN = false;
+      break;
+
     case 'H':
-      RUNNING=false;
+    
+      RUNNING = false;
       break;
 
-    case 'T':
+    case 'T':   // tilt override.
+      tok = strtok(cmd, " :");
       tok = strtok(NULL, " ");
       if (tok == NULL) goto INVALID;
-      ui_tilt = atoi(tok);
+      ui_tilt = in_range(-80,80,atoi(tok));
+      if (RUNNING) myprintf(F("*!* Halt system to take effect \n"));
       break;
-      
+
     case 'D':
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto INVALID;
-      tm.Year = atoi(tok);
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK;
-      tm.Month = atoi(tok);
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK;
-      tm.Day = atoi(tok);
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK;
-      tm.Hour = atoi(tok);
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK;
-      tm.Minute = atoi(tok);
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK;
-      tm.Second = atoi(tok);
-
-OK:
-      mytime_write(tm);
-      delay(1500);
-      mytime_read(tm);
-      ui_printTime(F("\n check me : "), tm);
-      myprintln();
+      {
+        MyTime t1(&cmd[1]);
+        t1.write();
+        delay(1500);
+        MyTime t2 = MyTime();
+        t2.print(F("\n check me : "));
+        myprintln();
+      }
       break;
 
-    case 'P':
+    case 'P':   // phase 
+      tok = strtok(cmd, " :");
       tok = strtok(NULL, " ");
       if (tok == NULL) goto INVALID;
-      phaseOff = atoi(tok);
+      ui_phase = in_range(-180,180,atoi(tok));
+      if (RUNNING) myprintf(F("*!* Halt system to take effect \n"));
+      else phase_set(ui_phase);
+      break;
+
+    case 'O':   // phase offset
+      tok = strtok(cmd, " :");
+      tok = strtok(NULL, " ");
+      if (tok == NULL) goto INVALID;
+      phaseOff = in_range(-360,360,atoi(tok));
       phase_setOffset(phaseOff);
       break;
 
@@ -224,16 +225,14 @@ OK:
       break;
 
     case 't':
+      tok = strtok(cmd, " :");
       tok = strtok(NULL, " ");
       if (tok == NULL) goto INVALID;
-      d = atoi(tok);
+      d = in_range(SERVO_MIN,SERVO_MID,atoi(tok));
       tok = strtok(NULL, " ");
       if (tok == NULL) goto INVALID;
-      u = atoi(tok);
+      u = in_range(SERVO_MID,SERVO_MAX,atoi(tok));
       tilt_setLimits(d, u);
-      tilt_set(TILT_ANG_DOWN, 2000);
-      tilt_set(0, 2000);
-      tilt_set(TILT_ANG_UP, 2000);
       break;
 
     case 'W':
@@ -251,38 +250,47 @@ OK:
       break;
 
     case 'L':
-      tm.Minute = 0;
-      tm.Second = 0;
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK2;
-      n = atoi(tok);
-   
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK2;
-      incHr = atoi(tok);
-      
-      
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK2;
-      tm.Year = atoi(tok);
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK2;
-      tm.Month = atoi(tok);
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK2;
-      tm.Day = atoi(tok);
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK2;
-      tm.Hour = atoi(tok);
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK2;
-      tm.Minute = atoi(tok);
-      tok = strtok(NULL, " ");
-      if (tok == NULL) goto OK2;
-      tm.Second = atoi(tok);
+      {
+        int Minute = tm.getMinute();
+        int Second = tm.getSecond();
+        int Year = tm.getYear();
+        int Month = tm.getMonth();
+        int Day = tm.getDay();
+        int Hour=tm.getHour();
+
+        tok = strtok(cmd, " :");
+        tok = strtok(NULL, " ");
+        if (tok == NULL) goto OK2;
+        n = in_range(1,200,atoi(tok));
+
+        tok = strtok(NULL, " ");
+        if (tok == NULL) goto OK2;
+        incHr = in_range(1,366*24,atoi(tok));
+
+        tok = strtok(NULL, " ");
+        if (tok == NULL) goto OK2;
+        Year = in_range(2016,2200,atoi(tok));
+        tok = strtok(NULL, " ");
+        if (tok == NULL) goto OK2;
+        Month = in_range(1,12,atoi(tok));
+        tok = strtok(NULL, " ");
+        if (tok == NULL) goto OK2;
+        Day = in_range(1,mytime_daysInMonth(Month,Year),atoi(tok));
+        tok = strtok(NULL, " ");
+        if (tok == NULL) goto OK2;
+        Hour = in_range(0,23,atoi(tok));
+        tok = strtok(NULL, " ");
+        if (tok == NULL) goto OK2;
+        Minute = in_range(0,59,atoi(tok));
+        tok = strtok(NULL, " ");
+        if (tok == NULL) goto OK2;
+        Second = in_range(0,59,atoi(tok));
 
 OK2:
-      moon_printTable(tm,n,incHr);
+        MyTime tt = MyTime(Year, Month, Day, Hour,Minute, Second);
+        moon_printTable(tt, n, incHr);
+      }
+      
       break;
 
   }
@@ -291,7 +299,7 @@ OK2:
   return;
 INVALID:
   myprintf(F("\n Command error \n>"), cmd);
-  ui_prompt();  
+  ui_prompt();
   return;
 }
 
@@ -307,6 +315,9 @@ bool ui_poll_break() {
 }
 
 
+// Poll for input.
+// Build up a string.
+// When a CR OR NL is recieved process the command
 
 static void ui_poll2() {
 
@@ -324,9 +335,11 @@ static void ui_poll2() {
       serial->write(8);
       return;
     }
-    
+
     input_string[str_cnt] = inChar;
-    if (inChar == 13) {
+
+    if (inChar == 13 || inChar == 10 ) {
+      input_string[str_cnt]=0;
       ui_command(input_string);
       str_cnt = 0;
     } else {
@@ -335,18 +348,14 @@ static void ui_poll2() {
   }
 }
 
-// Poll for input via USB or BT.
-// Build up a string.
-// When a CR is recieved process the command
-
 
 void ui_poll() {
-  
-  if (BREAK) {
-    ui_printError();
-    BREAK = false;
-  }
 
+//  if (BREAK) {
+//    ui_printError();
+//    BREAK = false;
+//  }
+  
   ui_poll2();
 }
 

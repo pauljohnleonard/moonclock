@@ -6,7 +6,8 @@
 
 
 extern bool RUNNING;
-extern float ui_tilt;
+extern int  ui_tilt;
+extern int  ui_phase;
 
 // Display error string
 bool ui_printError();
@@ -21,7 +22,7 @@ void ui_welcome();
 //         RUNNING false 
 //         BREAK   true
 void ui_fatal(const __FlashStringHelper *mess);
-void ui_printTime(const __FlashStringHelper *tag,MyTime t);
+
 
 
 // There is an uncleared error message

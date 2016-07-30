@@ -21,8 +21,8 @@ static int get_djh() {
 void data_welcome() {
   myprintf(F("** MOON PHASE TABLE\n"));
   myprintf(F(" JH table size  : %d\n"),n_djh);
-  MyTime t=mytime_makeTime(yy_ref,mm_ref,dd_ref,hr_ref);
-  ui_printTime(F(" First New Moon :"),t );
+  MyTime t=MyTime(yy_ref,mm_ref,dd_ref,hr_ref,0,0);
+  t.print(F(" First New Moon :"));
   myprintln();
 }
 
@@ -33,16 +33,16 @@ void debug(const char *X) {
 
 void data_setup() {
   n_djh=sizeof(_djh);
-  MyTime t=mytime_makeTime(yy_ref,mm_ref,dd_ref,hr_ref);
+  MyTime t=MyTime(yy_ref,mm_ref,dd_ref,hr_ref,0,0);
   jh_index=0;
-  mytime_setJHfromCal(t);
-  jh_prev=t.JH;  
+  jh_prev=t.getJH();  
   jh_next=jh_prev+get_djh();
 }
 
 
-// Decrement table pointer
-static void inc() {
+// Advance table pointer
+
+void data_inc() {
   
   if ( jh_index  >=  (n_djh-1) ) {
     ui_fatal(F(" CLOCK is after end of table "));
@@ -56,8 +56,9 @@ static void inc() {
 }
 
 
-// Advance table pointer
-static void dec() {
+// Decrement table pointer
+
+void data_dec() {
 
   if (jh_index  <= 0) {
     ui_fatal(F(" CLOCK is before start of table "));
@@ -76,15 +77,14 @@ static void dec() {
 
 void  data_setIndexAt(long jh) {      
 
-  
   if (ui_hasError() != 0 ) return;
   
   while( ( jh_prev   >  jh ) && (! ui_hasError() ) ) {
-    dec();
+    data_dec();
   }
   
   while( ( jh_next   <  jh ) && ( !ui_hasError() ) ) {
-    inc();
+    data_inc();
   }
  
 }

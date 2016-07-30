@@ -23,7 +23,9 @@ void tilt_setLimits(int d,int u) {
 }
 
 
-
+bool tilt_running() {
+  return myservo.attached();
+}
 //  0 degrees is down
 void tilt_set(float ang,int onTime) {
 
@@ -39,12 +41,12 @@ void tilt_set(float ang,int onTime) {
     if ((millis()-servo_on_time)> onTime) {
       myservo.detach();
       delay(10);
-      myprintf(F(" SERVO DETACHING  \n"));
+      myprintf(F(" SERVO DETACHING  \n>"));
     }
     return;
   }
 
-  myprintf(F("\n setting SERVO @ %d  . . "),servo_pos);
+  myprintf(F("\n Setting SERVO @ %d.%d(deg)  %d(us)  .. please wait .. "),(int)floor(ang), (int)(10*(ang-floor(ang))),servo_pos);
   myservo.attach(SERVO_PIN);
   myservo.writeMicroseconds(servo_pos);
   servo_pos_last=servo_pos;
