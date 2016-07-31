@@ -31,10 +31,10 @@ void loop() {
 
   // If the system is running set tilt and phase
   if (RUNNING) {                                // don't try to use the phase system if not RUNNING. 
-    tilt_set(moon_tilt, 1000);                  // limit servo time to 200 millis (Note return straight away);
+    tilt_set(moon_tilt, 2000);                  // limit servo time to 2000 millis (Note return straight away);
     if (!tilt_running()) phase_set(moon_phase); // Don't try to set phase if the tilt servo is active. 
   } else {
-    tilt_set(ui_tilt, 500);                     // SYstem not running so set tilt the user set value.
+    tilt_set(ui_tilt, 2000);                     // SYstem not running so set tilt the user set value.
   }
 }
 

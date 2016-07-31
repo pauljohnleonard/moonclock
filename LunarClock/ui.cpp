@@ -75,7 +75,7 @@ void _ui_printState() {
   myprintf(F(" Sensor state   : ang=%s v1=%d v2=%d \n"), myf2str(phaseAng), phase_sense1, phase_sense2);
 
   myprintf(F("** TILT DRIVE SYSTEM\n"));
-  myprintf(F(" servo state    : %d->%d->%d\n"), tilt_PosDown, servo_pos, tilt_PosUp);
+  myprintf(F(" servo state    : %d->%d->%d\n"), tilt_servoDownLimit, servo_pos, tilt_servoUpLimit);
 
 
   myprintf(F("** LUNAR \n"));

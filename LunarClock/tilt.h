@@ -6,12 +6,12 @@
 
 
 // SERVO LIMITS in microseconds for servo pulse
-#define SERVO_RANGE 600
-#define SERVO_MID 1500
+#define SERVO_RANGE 700
+#define SERVO_MID  1500
 #define SERVO_MIN (SERVO_MID-SERVO_RANGE)
 #define SERVO_MAX (SERVO_MID+SERVO_RANGE)
 
-#define TILT_ANG_UP   70
+#define TILT_ANG_UP   60
 #define TILT_ANG_DOWN (-TILT_ANG_UP)
 
 extern int servo_pos;

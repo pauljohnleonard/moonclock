@@ -3,11 +3,11 @@
 #include "tilt.h"
 #include "phase.h"
 #include "ui.h"
-// set microseconds for 70deg and -70deg points
-int tilt_PosDown = SERVO_MIN + 200;
-int tilt_PosUp = SERVO_MAX - 200;
+// set microseconds for 70deg and -70deg points. Overridden by EEPROM values
+int tilt_servoDownLimit = SERVO_MIN + 200;
+int tilt_servoUpLimit = SERVO_MAX - 200;
 
-// phase offset for moon in degs
+// phase offset for moon in degs.  Overridden by EEPROM values
 int phase_Offset = 0;
 int sensor1_max = 908;
 int sensor1_min = 115;
@@ -33,8 +33,8 @@ static int myput(int i,int val) {
 
 static void eeprom_default() {
   // set microseconds for 70deg and -70deg points
-  tilt_PosDown = SERVO_MIN + 200;
-  tilt_PosUp = SERVO_MAX - 200;
+  tilt_servoDownLimit = SERVO_MIN + 200;
+  tilt_servoUpLimit = SERVO_MAX - 200;
 
   // phase offset for moon in degs
   phase_Offset = 0;
@@ -59,8 +59,8 @@ void eeprom_read() {
     return;  
   }
   
-  myget(i++, tilt_PosDown);
-  myget(i++, tilt_PosUp);
+  myget(i++, tilt_servoDownLimit);
+  myget(i++, tilt_servoUpLimit);
   myget(i++, phase_Offset);
   myget(i++, sensor1_min);
   myget(i++, sensor1_max);
@@ -75,8 +75,8 @@ void eeprom_write() {
   
   myput(0,MAGIC);
 
-  myput(i++, tilt_PosDown);
-  myput(i++, tilt_PosUp);
+  myput(i++, tilt_servoDownLimit);
+  myput(i++, tilt_servoUpLimit);
   myput(i++, phase_Offset);
   myput(i++, sensor1_min);
   myput(i++, sensor1_max);
