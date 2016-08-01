@@ -11,7 +11,7 @@
 #define SERVO_MIN (SERVO_MID-SERVO_RANGE)
 #define SERVO_MAX (SERVO_MID+SERVO_RANGE)
 
-#define TILT_ANG_UP   60
+#define TILT_ANG_UP   50
 #define TILT_ANG_DOWN (-TILT_ANG_UP)
 
 extern int servo_pos;

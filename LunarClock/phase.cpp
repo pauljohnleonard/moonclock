@@ -100,11 +100,11 @@ float phase_read() {
   float x1 = (phase_sense1 - mid1) / d1;
   float x2 = (phase_sense2 - mid2) / d2;
 
-  return ang_wrap(phase_Offset + atan2(x1, x2) * 180.0 / M_PI);
+  return ang_wrap(phase_Offset + atan2(x1, -x2) * 180.0 / M_PI);
 
 }
 
-void phase_back() {
+void phase_forward() {
   digitalWrite(MOTOR_POS_PIN, HIGH);
   digitalWrite(MOTOR_NEG_PIN, LOW);
 }
@@ -155,7 +155,7 @@ void phase_set(int phaseNew) {
       if (state != 1) {
         phase_forward();
       }
-      if (doPrint) myprintf(F("\b\b\b\b\b\b%3d ->"), (int)round(phase));
+      if (doPrint) myprintf(F("\b\b\b\b\b\b\b%4d ->"), (int)round(phase));
       state = 1;
 
     } else if (diff < -TOL) {
@@ -163,7 +163,7 @@ void phase_set(int phaseNew) {
       if ( state != -1) {
         phase_back();
       }
-      if (doPrint) myprintf(F("\b\b\b\b\b\b%3d <-"), (int)round(phase));
+      if (doPrint) myprintf(F("\b\b\b\b\b\b\b%4d <-"), (int)round(phase));
       state = -1;
     } else {
       phase_halt();
@@ -183,7 +183,7 @@ void phase_set(int phaseNew) {
 }
 
 
-void phase_forward() {
+void phase_back() {
 
   digitalWrite(MOTOR_NEG_PIN, HIGH);
   digitalWrite(MOTOR_POS_PIN, LOW);
