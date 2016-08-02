@@ -54,9 +54,10 @@ void ui_prompt() {
 
   t.printJD(F("\n"));
   myprintln();
-  if (!RUNNING)     myprintf(F("*!*  SYSTEM IS NOT RUNNING           *!*\n"));
-  if (PHASE_BROKEN) myprintf(F("*!*  PHASE SYSTEM BROKEN FLAG IS SET *!*\n"));
-  myprintf(">"); 
+  if (!RUNNING)           myprintf(F("*!*  SYSTEM IS NOT RUNNING           *!*\n"));
+  if (PHASE_BROKEN)       myprintf(F("*!*  PHASE SYSTEM BROKEN FLAG IS SET *!*\n"));
+  if (mytime_speed != 0 ) myprintf(F("*!*  CLOCK SPEED SET %4d mins/sec   *!*\n"));
+  myprintf(">");
 }
 
 
@@ -133,13 +134,14 @@ void ui_welcome() {
   myprintf( F("Manual Tilt    : T deg \n"));
   myprintf( F("Manual Phase   : P deg \n"));
   myprintf( F("Reset and Run  : R \n"));
+  myprintf( F("Speed (demo)   : S minsPerSec \n"));
   myprintf( F("Clear error    : ! \n"));
   myprintf( F("Help(this)     : ? \n"));
 
 }
 
-static int in_range(int min1,int max1,int val) {
-  return max(min(max1,val),min1);
+static int in_range(int min1, int max1, int val) {
+  return max(min(max1, val), min1);
 }
 
 // Process a line.
@@ -153,23 +155,23 @@ static void ui_command(char *cmd) {
 
   int  phaseOff, d, u, tmp;
 
-
+  myflush();
   myprintln();
 
-  
+
   switch (cmd[0]) {
 
     case 'M':
       tok = strtok(cmd, " :");
       tok = strtok(NULL, " ");
       if (tok == NULL) {
-        n=10;
+        n = 10;
       } else {
-        n = in_range(1,200,atoi(tok));
+        n = in_range(1, 200, atoi(tok));
       }
       moon_halfTable(n);
       break;
-      
+
     case 'C':
       phase_calibrate();
       break;
@@ -180,7 +182,8 @@ static void ui_command(char *cmd) {
       break;
 
     case 'H':
-    
+      phase_halt();
+      
       RUNNING = false;
       break;
 
@@ -188,14 +191,14 @@ static void ui_command(char *cmd) {
       tok = strtok(cmd, " :");
       tok = strtok(NULL, " ");
       if (tok == NULL) goto INVALID;
-      ui_tilt = in_range(-80,80,atoi(tok));
+      ui_tilt = in_range(-80, 80, atoi(tok));
       if (RUNNING) myprintf(F("*!* Halt system to take effect \n"));
       break;
 
     case 'D':
       {
         MyTime t1(&cmd[1]);
-        t1.write();
+        t1.writeRTC();
         delay(1500);
         MyTime t2 = MyTime();
         t2.print(F("\n check me : "));
@@ -203,11 +206,11 @@ static void ui_command(char *cmd) {
       }
       break;
 
-    case 'P':   // phase 
+    case 'P':   // phase
       tok = strtok(cmd, " :");
       tok = strtok(NULL, " ");
       if (tok == NULL) goto INVALID;
-      ui_phase = in_range(-180,180,atoi(tok));
+      ui_phase = in_range(-180, 180, atoi(tok));
       if (RUNNING) myprintf(F("*!* Halt system to take effect \n"));
       else phase_set(ui_phase);
       break;
@@ -216,23 +219,27 @@ static void ui_command(char *cmd) {
       tok = strtok(cmd, " :");
       tok = strtok(NULL, " ");
       if (tok == NULL) goto INVALID;
-      phaseOff = in_range(-360,360,atoi(tok));
+      phaseOff = in_range(-360, 360, atoi(tok));
       phase_setOffset(phaseOff);
       break;
 
-    case 'S':
-      phase_test();
-      break;
 
     case 't':
       tok = strtok(cmd, " :");
       tok = strtok(NULL, " ");
       if (tok == NULL) goto INVALID;
-      d = in_range(SERVO_MIN,SERVO_MID,atoi(tok));
+      d = in_range(SERVO_MIN, SERVO_MID, atoi(tok));
       tok = strtok(NULL, " ");
       if (tok == NULL) goto INVALID;
-      u = in_range(SERVO_MID,SERVO_MAX,atoi(tok));
+      u = in_range(SERVO_MID, SERVO_MAX, atoi(tok));
       tilt_setLimits(d, u);
+      break;
+
+    case 'S':
+      tok = strtok(cmd, " :");
+      tok = strtok(NULL, " ");
+      if (tok == NULL) goto INVALID;
+      mytime_setSpeed(in_range(-100, 100, atoi(tok)));
       break;
 
     case 'W':
@@ -243,6 +250,7 @@ static void ui_command(char *cmd) {
       BREAK = false;
       RUNNING = true;
       error_mess = NULL;
+      mytime_setSpeed(0);
       break;
 
     case '?':
@@ -256,41 +264,41 @@ static void ui_command(char *cmd) {
         int Year = tm.getYear();
         int Month = tm.getMonth();
         int Day = tm.getDay();
-        int Hour=tm.getHour();
+        int Hour = tm.getHour();
 
         tok = strtok(cmd, " :");
         tok = strtok(NULL, " ");
         if (tok == NULL) goto OK2;
-        n = in_range(1,200,atoi(tok));
+        n = in_range(1, 200, atoi(tok));
 
         tok = strtok(NULL, " ");
         if (tok == NULL) goto OK2;
-        incHr = in_range(1,366*24,atoi(tok));
+        incHr = in_range(1, 366 * 24, atoi(tok));
 
         tok = strtok(NULL, " ");
         if (tok == NULL) goto OK2;
-        Year = in_range(2016,2200,atoi(tok));
+        Year = in_range(2016, 2200, atoi(tok));
         tok = strtok(NULL, " ");
         if (tok == NULL) goto OK2;
-        Month = in_range(1,12,atoi(tok));
+        Month = in_range(1, 12, atoi(tok));
         tok = strtok(NULL, " ");
         if (tok == NULL) goto OK2;
-        Day = in_range(1,mytime_daysInMonth(Month,Year),atoi(tok));
+        Day = in_range(1, mytime_daysInMonth(Month, Year), atoi(tok));
         tok = strtok(NULL, " ");
         if (tok == NULL) goto OK2;
-        Hour = in_range(0,23,atoi(tok));
+        Hour = in_range(0, 23, atoi(tok));
         tok = strtok(NULL, " ");
         if (tok == NULL) goto OK2;
-        Minute = in_range(0,59,atoi(tok));
+        Minute = in_range(0, 59, atoi(tok));
         tok = strtok(NULL, " ");
         if (tok == NULL) goto OK2;
-        Second = in_range(0,59,atoi(tok));
+        Second = in_range(0, 59, atoi(tok));
 
 OK2:
-        MyTime tt = MyTime(Year, Month, Day, Hour,Minute, Second);
+        MyTime tt = MyTime(Year, Month, Day, Hour, Minute, Second);
         moon_printTable(tt, n, incHr);
       }
-      
+
       break;
 
   }
@@ -339,7 +347,7 @@ static void ui_poll2() {
     input_string[str_cnt] = inChar;
 
     if (inChar == 13 || inChar == 10 ) {
-      input_string[str_cnt]=0;
+      input_string[str_cnt] = 0;
       ui_command(input_string);
       str_cnt = 0;
     } else {
@@ -351,11 +359,11 @@ static void ui_poll2() {
 
 void ui_poll() {
 
-//  if (BREAK) {
-//    ui_printError();
-//    BREAK = false;
-//  }
-  
+  //  if (BREAK) {
+  //    ui_printError();
+  //    BREAK = false;
+  //  }
+
   ui_poll2();
 }
 

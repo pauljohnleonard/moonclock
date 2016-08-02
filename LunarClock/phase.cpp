@@ -53,7 +53,10 @@ void phase_calibrate() {
   
   while ((millis() - tNow) < CALIB_TIME ) {
     
-    if (ui_poll_break()) return;
+    if (ui_poll_break()) {
+      phase_halt();
+      return;
+    }
     
     int v1 = analogRead(SENS1_PIN);
   

@@ -6,6 +6,31 @@
 #include "ui.h"
 #include "myio.h"
 
+
+// 0 use RTC.
+// Other wise clock is N mins per real sec
+
+
+int mytime_speed=0;  
+
+  
+static MyTime *myTimeRef=NULL;
+static long millis_ref;
+ 
+void mytime_setSpeed(int i) {
+
+  if (mytime_speed==0) {    // set my clock to wall time
+    if (myTimeRef==NULL) myTimeRef=new MyTime();
+    myTimeRef->readRTC();
+    myTimeRef->setTimeFromJH(myTimeRef->getJH(),myTimeRef->getMinute(),0);  // 
+  }
+
+  mytime_speed=i;
+  millis_ref=millis();
+
+}
+
+
 int MyTime::dayOfYear() {
 
   int days = Day;
@@ -18,11 +43,18 @@ int MyTime::dayOfYear() {
 
 }
 
-//
-//void MyTime::addToJH(int incHr) {
-//    t.JH += incHr;
-//    setCalfromJH(t.Minute,t.Second);
-//}
+MyTime::MyTime() {
+  
+  if (mytime_speed == 0) {
+    readRTC();
+  } else {
+     int deltaSec=(millis()-millis_ref)/1000;
+     int clockMins=mytime_speed*deltaSec;
+     long JH=myTimeRef->JH + clockMins/60;
+       
+     setTimeFromJH(JH,clockMins%60,0);  
+  }
+}
 
 int mytime_daysInMonth(int month, int year)
 {
@@ -69,15 +101,20 @@ void MyTime::setJHfromCal()
 
 MyTime::MyTime(long JH1, int mins, int secs) {
 
-// BUGGY HERE
 
-  long I, J, K, L, N, JD;
+  setTimeFromJH(JH1,mins,secs);
+
+}
+
+void MyTime::setTimeFromJH(long JH1, int mins, int secs){
+
+  long I, J, K, L, N;
 
   this->JH = JH1;
 
   JH1 = JH1 + 12;
 
-  JD = JH1 / 24;
+  long JD = JH1 / 24;
   
   Hour = JH1 % 24;
   
@@ -98,6 +135,7 @@ MyTime::MyTime(long JH1, int mins, int secs) {
   Year = I;
   Month = J;
   Day = K;
+
 
   MyTime t2=MyTime(I,J,K,Hour,Minute,Second);
 
@@ -138,7 +176,7 @@ void MyTime::parseStr(char *str) {
   if (tok == NULL) return;
   Hour = atoi(tok);
   tok = strtok(NULL, " ");
-  if (tok == NULL) return;
+  if   (tok == NULL) return;
   Minute = atoi(tok);
   tok = strtok(NULL, " ");
   if (tok == NULL) return;
@@ -146,13 +184,16 @@ void MyTime::parseStr(char *str) {
 }
 
 MyTime::MyTime(char *str) {
-
+  MyTime();
   Year = Month = Day = Hour = Minute = Second = 0;
   parseStr(str);
   setJHfromCal();
 }
 
-MyTime::MyTime() {
+
+
+bool MyTime::readRTC() {
+
   tmElements_t tm;
 
   if (RTC.read(tm)) {
@@ -163,7 +204,7 @@ MyTime::MyTime() {
     Second = tm.Second;
     Minute = tm.Minute;
     setJHfromCal();
-    return;
+    return true;
   }
 
 
@@ -172,10 +213,10 @@ MyTime::MyTime() {
   } else {
     ui_fatal(F("RTC read error!  Is it connected? Please check the circuitry. \n"));
   }
-
+  return false;
 }
 
-bool MyTime::write() {
+bool MyTime::writeRTC() {
 
   tmElements_t t;
 

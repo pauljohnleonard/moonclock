@@ -11,11 +11,12 @@
 #include "data.h"
 #include "myio.h"
 #include "eeprom.h"
+#include "global.h"
 
 
 void update_moon_state() {
 
-  MyTime t=MyTime();
+  MyTime t;
   data_setIndexAt(t.getJH());
   moon_updateState(t);
 
@@ -25,13 +26,12 @@ void update_moon_state() {
 void loop() {
 
   // poll for user interaction
-  ui_poll();
-  
+  ui_poll();  
   update_moon_state();                           // use the RTC to update the moon model.
 
   // If the system is running set tilt and phase
   if (RUNNING) {                                // don't try to use the phase system if not RUNNING. 
-    tilt_set(moon_tilt, 2000);                  // limit servo time to 2000 millis (Note return straight away);
+    tilt_set(moon_tilt, SERVO_ATTACH_TIME);                  // limit servo time tmillis (Note return straight away);
     if (!tilt_running()) phase_set(moon_phase); // Don't try to set phase if the tilt servo is active. 
   } else {
     tilt_set(ui_tilt, 2000);                     // SYstem not running so set tilt the user set value.
@@ -42,15 +42,15 @@ void loop() {
 void setup() {
 
   Serial.begin(9600);
- 
   serial = & Serial;
-  
+
+ 
   // restore sved state from EEPROM
   eeprom_read();
 
   // initialize phase table.
   data_setup();
-
+ 
   delay(500);
 
   tilt_setup();

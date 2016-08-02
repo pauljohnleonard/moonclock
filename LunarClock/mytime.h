@@ -6,6 +6,9 @@
 
 // valid for years 2000 - 2099
 
+extern int mytime_speed;
+void mytime_setSpeed(int i);
+ 
 class MyTime
 {
   int Year;
@@ -19,19 +22,21 @@ class MyTime
 public:
   MyTime(int y,int m,int d,int h,int minute,int second);
   MyTime(long JH,int mins,int secs);
-  MyTime();
+  MyTime();   // Use RTC to initialise
   MyTime(char *str);
 
   // days into the year;
   int dayOfYear();
 
-
+  void setTimeFromJH(long JH1, int mins, int secs);
+  
   // READ TIME FOR HARDWARE CLOCK:  
   //bool r();         
 
   // WRITE TIME TO HARDWARE CLOCK      
-  bool write();
-
+  bool writeRTC();
+  bool readRTC();
+  
   long getJH() { return JH;}   
   int getYear() {return Year;}
   int getMonth() {return Month;}
@@ -46,6 +51,7 @@ private:
   // Convert date into Julian Hours  
   void  setJHfromCal();
   void  setCalfromJH();
+
   void parseStr(char *str);
 
 
