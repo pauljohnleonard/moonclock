@@ -8,9 +8,15 @@
 
 #include <math.h>
 
+
+#define CALIB_TIME 100000
+
+#define TOL_ACTIVATE  2
+#define TOL_FORWARD   0 
+#define TOL_BACKWARD  1
+
 int phase_sense1;
 int phase_sense2;
-
 bool PHASE_BROKEN=false;
 
 void phase_test() {
@@ -38,19 +44,22 @@ void phase_test() {
   phase_halt();
 }
 
-#define CALIB_TIME 100000
+
+
 
 void phase_calibrate() {
  
   int max1 = 0, min1 = 1024, max2 = 0, min2 = 1024;
   phase_forward();
   bool calibrtating = true;
-  myprintf(F("Calibrating phase sensors please wait 100 secs  ... \n "));
+  myprintf(F("Calibrating phase sensors please wait ... "));
   
   long tNow = millis();
   long DT = CALIB_TIME/100;
   long tNext=tNow+DT;
-  
+  int percent=0;
+  myprintf(F("  0%%")); 
+    
   while ((millis() - tNow) < CALIB_TIME ) {
     
     if (ui_poll_break()) {
@@ -68,8 +77,9 @@ void phase_calibrate() {
     min2 = min(v2, min2);
     max2 = max(v2, max2);
     if (  millis() >= tNext) {
-       myprintf(F(".")); 
+       myprintf(F("\b\b\b\b%3d%%"),percent); 
        tNext+=DT;
+       percent+=1;
     }
   }
 
@@ -112,7 +122,6 @@ void phase_forward() {
   digitalWrite(MOTOR_NEG_PIN, LOW);
 }
 
-#define TOL 1
 
 void phase_set(int phaseNew) {
 
@@ -128,8 +137,8 @@ void phase_set(int phaseNew) {
 
   int diff = round(ang_wrap(phaseNew - phase));
 
-  if ( (diff > 2*TOL ) || (diff < -2*TOL) ) {
-    myprintf(F("Setting phase to %d  . . .    "), phaseNew);
+  if ( (diff > TOL_ACTIVATE ) || (diff < -TOL_ACTIVATE) ) {
+    myprintf(F("Setting phase to %d deg           "), phaseNew);
   } else {
     return;
   }
@@ -153,7 +162,7 @@ void phase_set(int phaseNew) {
     
     int diff = round(ang_wrap(phaseNew - phase));
 
-    if (diff > TOL) {
+    if (diff > TOL_FORWARD) {
 
       if (state != 1) {
         phase_forward();
@@ -161,7 +170,7 @@ void phase_set(int phaseNew) {
       if (doPrint) myprintf(F("\b\b\b\b\b\b\b%4d ->"), (int)round(phase));
       state = 1;
 
-    } else if (diff < -TOL) {
+    } else if (diff < -TOL_BACKWARD) {
 
       if ( state != -1) {
         phase_back();

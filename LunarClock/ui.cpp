@@ -179,6 +179,7 @@ static void ui_command(char *cmd) {
     case '!':
       error_mess   =  NULL;
       PHASE_BROKEN = false;
+      BREAK=false;
       break;
 
     case 'H':
