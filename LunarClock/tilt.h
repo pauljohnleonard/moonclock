@@ -20,13 +20,13 @@ extern int servo_pos;
 void tilt_setup();
 
 // Set tilt.  Keep servo attached or onTime millisecs  (0-infinfite)
-void tilt_set(float tilt,int onTime);
+void tilt_set(float tilt, int onTime);
 
 // Is servo active?
 bool tilt_running();
 
 // set the limits of servo in uS
-void tilt_setLimits(int down,int up);
+void tilt_setLimits(int down, int up);
 
 
 

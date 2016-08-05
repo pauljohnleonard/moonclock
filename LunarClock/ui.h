@@ -21,7 +21,7 @@ void ui_poll();
 void ui_welcome();
 
 // set the error string
-//         RUNNING false 
+//         RUNNING false
 //         BREAK   true
 void ui_fatal(const __FlashStringHelper *mess);
 

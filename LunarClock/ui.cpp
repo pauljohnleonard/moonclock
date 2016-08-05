@@ -46,8 +46,8 @@ void ui_setup() {
 
 void ui_display_led() {
 
-  bool flash=(millis()/FLASH_MILLIS)%2;
-  
+  bool flash = (millis() / FLASH_MILLIS) % 2;
+
   int R, B, G , Y ;
   R = B = G = Y = HIGH;
 
@@ -63,7 +63,7 @@ void ui_display_led() {
     B = LOW;
   }
 
-  
+
   digitalWrite(LED_R_PIN, R);
   digitalWrite(LED_G_PIN, G);
   digitalWrite(LED_B_PIN, B);
@@ -107,7 +107,7 @@ void ui_prompt() {
   myprintln();
   if (!RUNNING)           myprintf(F("*!*  SYSTEM IS NOT RUNNING           *!*\n"));
   if (PHASE_BROKEN)       myprintf(F("*!*  PHASE SYSTEM BROKEN FLAG IS SET *!*\n"));
-  if (mytime_speed != 0 ) myprintf(F("*!*  CLOCK SPEED SET %4d mins/sec   *!*\n"),mytime_speed);
+  if (mytime_speed != 0 ) myprintf(F("*!*  CLOCK SPEED SET %4d mins/sec   *!*\n"), mytime_speed);
   myprintf(">");
 }
 

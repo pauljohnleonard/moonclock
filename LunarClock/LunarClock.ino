@@ -13,7 +13,6 @@
 #include "eeprom.h"
 #include "global.h"
 
-
 void update_moon_state() {
 
   MyTime t;
@@ -22,22 +21,22 @@ void update_moon_state() {
 
 }
 
-
 void loop() {
 
-  // poll for user interaction
-  ui_display_led();
-  ui_poll();  
+  ui_display_led();                              // We must have flashing LEDS!!!!!
+
+  ui_poll();                                     // poll for user interaction
+
   update_moon_state();                           // use the RTC to update the moon model.
 
   // If the system is running set tilt and phase
-  if (RUNNING) {                                // don't try to use the phase system if not RUNNING. 
-    tilt_set(moon_tilt, SERVO_ATTACH_TIME);                  // limit servo time tmillis (Note return straight away);
-    if (!tilt_running()) phase_set(moon_phase); // Don't try to set phase if the tilt servo is active. 
+  if (RUNNING) {                                // don't try to use the phase system if not RUNNING.
+    tilt_set(moon_tilt, SERVO_ATTACH_TIME);     // limit servo time tmillis (Note return straight away);
+    if (!tilt_running()) phase_set(moon_phase); // Don't try to set phase if the tilt servo is active.
   } else {
-    tilt_set(ui_tilt, 2000);                     // SYstem not running so set tilt the user set value.
+    tilt_set(ui_tilt, 2000);                    // SYstem not running so set tilt the user set value.
   }
-  
+
   phase_halt();                                 // phase should only run blocking in closed loop.
 }
 
@@ -45,27 +44,22 @@ void loop() {
 void setup() {
 
   Serial.begin(9600);
-  serial = & Serial;
+  serial = & Serial;                            // We could use a different Stream if we wanted.
 
   ui_setup();
+  eeprom_read();                                // restore sved state from EEPROM
 
-  // restore sved state from EEPROM
-  eeprom_read();
+  data_setup();                                 // initialize phase table.
 
-  // initialize phase table.
-  data_setup();
- 
   delay(500);
 
   tilt_setup();
   phase_setup();
+
   update_moon_state();
-
   ui_welcome();
-  ui_printError();
+  ui_printError();                             // Hopefully nothing
   myprintf("\n>");
-  
+
 }
-
-
 

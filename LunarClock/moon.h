@@ -12,7 +12,7 @@ extern float season_ang;
 
 // Update the state of the moon
 void moon_updateState(MyTime &t);
-void moon_printTable(MyTime t,int n,int incHr);
+void moon_printTable(MyTime t, int n, int incHr);
 void moon_halfTable(int n);
 
 #endif

@@ -18,7 +18,7 @@ float season_ang;
 // return phase of moon given calendar time
 static float get_moon_phaseRad(MyTime &tm) {
 
-  
+
   long jhPrev = data_jh_prev();
   long jhNext = data_jh_next();
 
@@ -26,10 +26,10 @@ static float get_moon_phaseRad(MyTime &tm) {
 
   long bJH = tm.getJH() - jhPrev;
 
-  float ang = M_PI * (bJH+tm.getMinute()/60.) / dJH;
+  float ang = M_PI * (bJH + tm.getMinute() / 60.) / dJH;
 
   if (data_isWaxing()) return ang;
-  
+
   else return ang - M_PI;
 
 }
@@ -40,7 +40,7 @@ void moon_setup() {
 }
 
 
-void _testCase(int i,float &angOfTilt,float &tilt,float &latitude,float &angOfMoon)
+void _testCase(int i, float &angOfTilt, float &tilt, float &latitude, float &angOfMoon)
 {
 
   switch (i) {
@@ -52,7 +52,7 @@ void _testCase(int i,float &angOfTilt,float &tilt,float &latitude,float &angOfMo
       angOfMoon = M_PI / 2;
       break;
     // tilt= -45  alt=0
-    
+
     case 1:
       angOfTilt = 0;
       tilt = 45 * deg2rad;
@@ -93,27 +93,27 @@ void _testCase(int i,float &angOfTilt,float &tilt,float &latitude,float &angOfMo
 
     case 5:
       angOfTilt = 0;          // wint sol
-      angOfMoon = M_PI / 2;  // half moon 
+      angOfMoon = M_PI / 2;  // half moon
       break;
 
-       // t=0     tilt=-61.24  ((90-latitude)+tilt)  alt=0
-       // t=12         15      ((90-latitude)-tilt)  alt=0
+    // t=0     tilt=-61.24  ((90-latitude)+tilt)  alt=0
+    // t=12         15      ((90-latitude)-tilt)  alt=0
 
     case 6:
       angOfTilt = M_PI;          // summer sol
-      angOfMoon = M_PI / 2;  // half moon 
+      angOfMoon = M_PI / 2;  // half moon
       break;
 
-       // t=0     tilt=-15     alt=0
-       // t=12         61.2    alt=0
+    // t=0     tilt=-15     alt=0
+    // t=12         61.2    alt=0
 
     case 7:
-      angOfTilt = M_PI/2;    // equinox (which one !!!)
-      angOfMoon = M_PI/2;  // half moon 
+      angOfTilt = M_PI / 2;  // equinox (which one !!!)
+      angOfMoon = M_PI / 2; // half moon
       break;
 
-        // 6       0.000    62.209
-        // 18      0        -15
+    // 6       0.000    62.209
+    // 18      0        -15
 
     case 8:
       angOfTilt = 0 ;
@@ -121,7 +121,7 @@ void _testCase(int i,float &angOfTilt,float &tilt,float &latitude,float &angOfMo
       latitude = 90 * deg2rad;
       angOfMoon = M_PI;
       break;
-      // tilt=0 alt=-45
+    // tilt=0 alt=-45
 
     default:
       break;
@@ -138,10 +138,10 @@ static void  set_moon_tilt(MyTime t, float angOfMoon)
 {
 
   // TODO improve me
-  static MyTime winterSoltice(2000, 12, 21, 0,0,0);
+  static MyTime winterSoltice(2000, 12, 21, 0, 0, 0);
   static const float timeTiltRef = winterSoltice.dayOfYear();    //  when tilt away from sun (north hemi) is MAX (winter solstice)
 
-  
+
   static float latitude = 51.2308 * deg2rad;  //  degrees from equator  (deg).
   static float tilt = 23.44 * deg2rad;       //  earths axis tilt from (deg).
   static const float julianYear = 365.24;                      //   ?? is this right ?
@@ -162,11 +162,11 @@ static void  set_moon_tilt(MyTime t, float angOfMoon)
 
   // component of tilt on obrital plane  relative to radial from the sun.
   float angOfTilt = -(timeOfSeason / julianYear) * 2 * M_PI; // phase of the season (this is going backwards).
-  
-  season_ang=ang_wrap(-angOfTilt/deg2rad);   // Just for user feedback  see ui.cpp
-  
+
+  season_ang = ang_wrap(-angOfTilt / deg2rad); // Just for user feedback  see ui.cpp
+
   // Don't belive the results then try some easy vcalues for a sanity check!!!!
-   // _testCase(8,angOfTilt,tilt,latitude,angOfMoon);
+  // _testCase(8,angOfTilt,tilt,latitude,angOfMoon);
 
 
   // frame of reference:
@@ -177,12 +177,12 @@ static void  set_moon_tilt(MyTime t, float angOfMoon)
 
 
   // initialize  POV vertical vector at observation point.
-  // longitude is =0.   (Near enough for frome ?) Infact you should correct time if you are fussed. 
+  // longitude is =0.   (Near enough for frome ?) Infact you should correct time if you are fussed.
   // time is midnight t=0.
   // Earth is at its origin (no tilt yet).
 
   // Here we vector calculusy go . . . .
-  
+
   Vector3D POV(cos(latitude), 0, sin(latitude));
 
   // Rotate POV according to time of day.
@@ -197,8 +197,8 @@ static void  set_moon_tilt(MyTime t, float angOfMoon)
   // -ve sign because we are rotating coordinate system
 
   POV.rotZ(-angOfTilt);
-  
-  // Rotate by tilt around new Y axis 
+
+  // Rotate by tilt around new Y axis
 
   POV.rotY(tilt);
 
@@ -233,7 +233,7 @@ void moon_updateState(MyTime &t) {
 }
 
 
-void moon_printTable(MyTime t, int n,int incHr) {
+void moon_printTable(MyTime t, int n, int incHr) {
 
   myprintf(F(" Date        time    season       phase      tilt      alt \n"));
 
@@ -245,25 +245,25 @@ void moon_printTable(MyTime t, int n,int incHr) {
     myprintf(F(" %s "), myf2str(moon_phase));
     myprintf(F(" %s "), myf2str(moon_tilt));
     myprintf(F(" %s \n"), myf2str(moon_alt));
-    
-    t=MyTime(t.getJH()+incHr,t.getMinute(),t.getSecond());
+
+    t = MyTime(t.getJH() + incHr, t.getMinute(), t.getSecond());
   }
 }
 
 void moon_halfTable(int n) {
- 
+
   for (int i = 0; i < n ; i++) {
     if (ui_poll_break()) return;
     MyTime tp = MyTime(data_jh_prev(), 0, 0);
- 
+
     if (data_isWaxing()) {
       tp.printJD(F("  New: "));
       myprintln();
     } else {
-       tp.printJD(F(" Full: "));
-       myprintln();
+      tp.printJD(F(" Full: "));
+      myprintln();
     }
-    data_inc(); 
+    data_inc();
   }
 }
 

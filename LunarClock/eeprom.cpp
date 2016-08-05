@@ -14,20 +14,20 @@ int sensor1_min = 115;
 int sensor2_max = 916;
 int sensor2_min = 111;
 
-static const int MAGIC=0;
+static const int MAGIC = 0;
 
 
 static int myaddr(int i) {
-  return 2*i; 
+  return 2 * i;
 }
 
-static int myget(int i,int &val) {
-    EEPROM.get(myaddr(i),val);  
+static int myget(int i, int &val) {
+  EEPROM.get(myaddr(i), val);
 }
 
 
-static int myput(int i,int val) {
-    EEPROM.put(myaddr(i),val);  
+static int myput(int i, int val) {
+  EEPROM.put(myaddr(i), val);
 }
 
 
@@ -47,18 +47,18 @@ static void eeprom_default() {
 
 void eeprom_read() {
 
-  int i=1;
+  int i = 1;
 
   int mag;
-  
-  myget(0,mag);
-  
+
+  myget(0, mag);
+
   if (mag != MAGIC) {
     ui_fatal(F(" Wrong MAGIC in EEPROM please calibrate and save "));
     eeprom_default();
-    return;  
+    return;
   }
-  
+
   myget(i++, tilt_servoDownLimit);
   myget(i++, tilt_servoUpLimit);
   myget(i++, phase_Offset);
@@ -71,9 +71,9 @@ void eeprom_read() {
 
 void eeprom_write() {
 
-  int i=1;
-  
-  myput(0,MAGIC);
+  int i = 1;
+
+  myput(0, MAGIC);
 
   myput(i++, tilt_servoDownLimit);
   myput(i++, tilt_servoUpLimit);
