@@ -26,6 +26,7 @@ void update_moon_state() {
 void loop() {
 
   // poll for user interaction
+  ui_display_led();
   ui_poll();  
   update_moon_state();                           // use the RTC to update the moon model.
 
@@ -36,6 +37,8 @@ void loop() {
   } else {
     tilt_set(ui_tilt, 2000);                     // SYstem not running so set tilt the user set value.
   }
+  
+  phase_halt();                                 // phase should only run blocking in closed loop.
 }
 
 
@@ -44,7 +47,8 @@ void setup() {
   Serial.begin(9600);
   serial = & Serial;
 
- 
+  ui_setup();
+
   // restore sved state from EEPROM
   eeprom_read();
 

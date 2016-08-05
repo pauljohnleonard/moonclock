@@ -97,6 +97,7 @@ void phase_calibrate() {
 }
 
 
+
 float phase_read() {
 
 
@@ -188,6 +189,7 @@ void phase_set(int phaseNew) {
     
     if (millis()-t1 > PHASE_SET_TIME_LIMIT) {
       ui_fatal(F("Phase set time limit reached. Check Phase drive system.")); 
+      phase_halt();
       PHASE_BROKEN = true;
       return;
     }

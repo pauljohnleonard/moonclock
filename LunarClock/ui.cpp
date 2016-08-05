@@ -8,6 +8,7 @@
 #include "myio.h"
 #include "eeprom.h"
 #include "moon.h"
+#include "pins.h"
 
 
 bool RUNNING = true;  // System is up and running
@@ -17,11 +18,61 @@ bool BREAK = false;   // Something wants to halt the system (or has det RUNNING 
 int ui_tilt  = 0;
 int ui_phase = 0;
 
-//  Max line length for UI input
-#define MAX_CHAR 60
+#define FLASH_MILLIS 500
 
-
+// Record the last error message here. Rest using "!"
 const __FlashStringHelper  *error_mess = NULL;
+
+
+//  Max line length for UI input
+#define MAX_CHAR 80
+
+
+void ui_setup() {
+  // set the digital pin as output:
+  pinMode(LED_R_PIN, OUTPUT);
+  pinMode(LED_G_PIN, OUTPUT);
+  pinMode(LED_B_PIN, OUTPUT);
+  pinMode(LED_Y_PIN, OUTPUT);
+  digitalWrite(LED_R_PIN, LOW);
+  digitalWrite(LED_G_PIN, LOW);
+  digitalWrite(LED_B_PIN, LOW);
+  digitalWrite(LED_Y_PIN, LOW);
+
+
+}
+
+
+
+void ui_display_led() {
+
+  bool flash=(millis()/FLASH_MILLIS)%2;
+  
+  int R, B, G , Y ;
+  R = B = G = Y = HIGH;
+
+  if ( (error_mess != NULL) || PHASE_BROKEN ) R = LOW;
+
+  if (!RUNNING) {
+    Y = LOW;
+  } else {
+    if (flash) G = LOW;
+  }
+
+  if (tilt_running()) {
+    B = LOW;
+  }
+
+  
+  digitalWrite(LED_R_PIN, R);
+  digitalWrite(LED_G_PIN, G);
+  digitalWrite(LED_B_PIN, B);
+  digitalWrite(LED_Y_PIN, Y);
+
+
+}
+
+
 
 bool ui_printError() {
   if (error_mess != NULL) {
@@ -56,7 +107,7 @@ void ui_prompt() {
   myprintln();
   if (!RUNNING)           myprintf(F("*!*  SYSTEM IS NOT RUNNING           *!*\n"));
   if (PHASE_BROKEN)       myprintf(F("*!*  PHASE SYSTEM BROKEN FLAG IS SET *!*\n"));
-  if (mytime_speed != 0 ) myprintf(F("*!*  CLOCK SPEED SET %4d mins/sec   *!*\n"));
+  if (mytime_speed != 0 ) myprintf(F("*!*  CLOCK SPEED SET %4d mins/sec   *!*\n"),mytime_speed);
   myprintf(">");
 }
 
@@ -179,12 +230,12 @@ static void ui_command(char *cmd) {
     case '!':
       error_mess   =  NULL;
       PHASE_BROKEN = false;
-      BREAK=false;
+      BREAK = false;
       break;
 
     case 'H':
       phase_halt();
-      
+
       RUNNING = false;
       break;
 
@@ -316,6 +367,7 @@ INVALID:
 // User hits any character to break system.
 
 bool ui_poll_break() {
+  ui_display_led();
   if (BREAK) return true;
   char c = myraw(false);
   if (c == 0) return false;

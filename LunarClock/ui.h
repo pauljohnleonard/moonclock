@@ -9,6 +9,8 @@ extern bool RUNNING;
 extern int  ui_tilt;
 extern int  ui_phase;
 
+void ui_setup();
+
 // Display error string
 bool ui_printError();
 
@@ -23,7 +25,7 @@ void ui_welcome();
 //         BREAK   true
 void ui_fatal(const __FlashStringHelper *mess);
 
-
+void ui_display_led();
 
 // There is an uncleared error message
 bool ui_hasError();
