@@ -30,6 +30,8 @@ void ui_display_led();
 // There is an uncleared error message
 bool ui_hasError();
 
+long ui_readVcc();
+
 // has user entered break characcter ?
 // if so BREAK is also set.   YOu may want to set RUNNING false after detecting this!!!
 bool ui_poll_break();

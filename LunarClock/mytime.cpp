@@ -160,35 +160,48 @@ MyTime::MyTime(int y, int m, int d, int h, int minute, int second) {
   setJHfromCal();
 }
 
-void MyTime::parseStr(char *str) {
+bool MyTime::parseStr(char *str) {
 
+ // myprintf(F(" >%s< \n"),str);
+
+  int yy,mm,dd,hr,mn,sc=0;
+  
   char *tok = strtok(str, " ");
+  if (tok == NULL) return false;
+  yy = atoi(tok);
   tok = strtok(NULL, " ");
-  if (tok == NULL) return;
-  Year = atoi(tok);
+  if (tok == NULL) return false;
+  mm = atoi(tok);
   tok = strtok(NULL, " ");
-  if (tok == NULL) return;
-  Month = atoi(tok);
+  if (tok == NULL) return false;
+  dd = atoi(tok);
   tok = strtok(NULL, " ");
-  if (tok == NULL) return;
-  Day = atoi(tok);
+  if (tok == NULL) return false;
+  hr = atoi(tok);
   tok = strtok(NULL, " ");
-  if (tok == NULL) return;
-  Hour = atoi(tok);
+  if   (tok == NULL) return false;
+  mn = atoi(tok);
   tok = strtok(NULL, " ");
-  if   (tok == NULL) return;
-  Minute = atoi(tok);
-  tok = strtok(NULL, " ");
-  if (tok == NULL) return;
-  Second = atoi(tok);
+  if (tok != NULL) sc= atoi(tok);
+
+  Year=yy;
+  Month=mm;
+  Day=dd;
+  Hour=hr;
+  Minute=mn;
+  Second=sc;
+  setJHfromCal();
+  return true;
+  
 }
 
-MyTime::MyTime(char *str) {
-  MyTime();
-  Year = Month = Day = Hour = Minute = Second = 0;
-  parseStr(str);
-  setJHfromCal();
-}
+//
+//MyTime::MyTime(char *str) {
+//  MyTime();
+//  Hour = Minute = Second = 0;
+//  parseStr(str);
+//  setJHfromCal();
+//}
 
 
 

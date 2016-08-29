@@ -13,6 +13,6 @@
 // If we reach this without success then halt the system.
 #define PHASE_SET_TIME_LIMIT  20000
 
-#define SERVO_ATTACH_TIME  500
+
 
 #endif

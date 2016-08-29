@@ -43,15 +43,31 @@ void ui_setup() {
 }
 
 
+long ui_readVcc() {
+  long result;
+  // Read 1.1V reference against AVcc
+  ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  delay(2); // Wait for Vref to settle
+  ADCSRA |= _BV(ADSC); // Convert
+  while (bit_is_set(ADCSRA, ADSC));
+  result = ADCL;
+  result |= ADCH << 8;
+  result = 1126400L / result; // Back-calculate AVcc in mV
+  return result;
+}
+
+
+
 
 void ui_display_led() {
+
 
   bool flash = (millis() / FLASH_MILLIS) % 2;
 
   int R, B, G , Y ;
   R = B = G = Y = HIGH;
 
-  if ( (error_mess != NULL) || PHASE_BROKEN ) R = LOW;
+  if ( (error_mess != NULL) || PHASE_BROKEN || tilt_low_volt ) R = LOW;
 
   if (!RUNNING) {
     Y = LOW;
@@ -62,6 +78,7 @@ void ui_display_led() {
   if (tilt_running()) {
     B = LOW;
   }
+
 
 
   digitalWrite(LED_R_PIN, R);
@@ -104,6 +121,8 @@ void ui_prompt() {
   ui_printError();
 
   t.printJD(F("\n"));
+
+  myprintf(F(" Vcc = %ld mV \n"),ui_readVcc());
   myprintln();
   if (!RUNNING)           myprintf(F("*!*  SYSTEM IS NOT RUNNING           *!*\n"));
   if (PHASE_BROKEN)       myprintf(F("*!*  PHASE SYSTEM BROKEN FLAG IS SET *!*\n"));
@@ -231,6 +250,7 @@ static void ui_command(char *cmd) {
       error_mess   =  NULL;
       PHASE_BROKEN = false;
       BREAK = false;
+      servo_retry_count = 0;
       break;
 
     case 'H':
@@ -249,12 +269,16 @@ static void ui_command(char *cmd) {
 
     case 'D':
       {
-        MyTime t1(&cmd[1]);
-        t1.writeRTC();
-        delay(1500);
-        MyTime t2 = MyTime();
-        t2.print(F("\n check me : "));
-        myprintln();
+        MyTime t1;
+        if (t1.parseStr(&cmd[2])) {
+          t1.writeRTC();
+          delay(1500);
+          MyTime t2 = MyTime();
+          t2.print(F("\n check me : "));
+          myprintln();
+        } else {
+          myprintf(F(" Error in date time input \n"));
+        }
       }
       break;
 
