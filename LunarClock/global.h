@@ -11,7 +11,7 @@
 
 // maximum time to try and set the phase
 // If we reach this without success then halt the system.
-#define PHASE_SET_TIME_LIMIT  20000
+#define PHASE_SET_TIME_LIMIT  60000
 
 
 

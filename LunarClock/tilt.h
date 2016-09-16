@@ -3,10 +3,11 @@
 
 // Interface to the tilt servo system.
 
-#define SERVO_MAX_ATTACH_TIME  400
+#define SERVO_MAX_ATTACH_TIME  2000
 #define SERVO_RETRY_TIME    50
-#define SERVO_MAX_TRY 10
-#define LOW_VOLT 4700
+#define SERVO_MAX_TRY 50
+#define SERVO_RETRY_DELAY 1000
+#define LOW_VOLT 750
 
 
 // absolute SERVO LIMITS in microseconds for servo pulse
@@ -22,7 +23,7 @@
 extern int servo_retry_count;
 extern int servo_pos;
 extern bool tilt_low_volt;
-
+extern bool TILT_BROKEN;
 // Initialise tilt system.
 void tilt_setup();
 

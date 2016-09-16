@@ -20,5 +20,6 @@
 #define LED_R_PIN  6
 
 
+#define SERVO_VOLT_PIN A0
 
 #endif

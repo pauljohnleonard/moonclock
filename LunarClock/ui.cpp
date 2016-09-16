@@ -80,12 +80,10 @@ void ui_display_led() {
   }
 
 
-
   digitalWrite(LED_R_PIN, R);
   digitalWrite(LED_G_PIN, G);
   digitalWrite(LED_B_PIN, B);
   digitalWrite(LED_Y_PIN, Y);
-
 
 }
 
@@ -126,6 +124,8 @@ void ui_prompt() {
   myprintln();
   if (!RUNNING)           myprintf(F("*!*  SYSTEM IS NOT RUNNING           *!*\n"));
   if (PHASE_BROKEN)       myprintf(F("*!*  PHASE SYSTEM BROKEN FLAG IS SET *!*\n"));
+  if (TILT_BROKEN)        myprintf(F("*!*  TILT SYSTEM BROKEN FLAG IS SET *!*\n"));
+  
   if (mytime_speed != 0 ) myprintf(F("*!*  CLOCK SPEED SET %4d mins/sec   *!*\n"), mytime_speed);
   myprintf(">");
 }
@@ -249,6 +249,7 @@ static void ui_command(char *cmd) {
     case '!':
       error_mess   =  NULL;
       PHASE_BROKEN = false;
+      TILT_BROKEN =false;
       BREAK = false;
       servo_retry_count = 0;
       break;
@@ -297,6 +298,7 @@ static void ui_command(char *cmd) {
       if (tok == NULL) goto INVALID;
       phaseOff = in_range(-360, 360, atoi(tok));
       phase_setOffset(phaseOff);
+      if (!RUNNING) phase_set(ui_phase);
       break;
 
 
@@ -316,6 +318,7 @@ static void ui_command(char *cmd) {
       tok = strtok(NULL, " ");
       if (tok == NULL) goto INVALID;
       mytime_setSpeed(in_range(-100, 100, atoi(tok)));
+      RUNNING=true;
       break;
 
     case 'W':
