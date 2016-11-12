@@ -14,5 +14,10 @@
 #define PHASE_SET_TIME_LIMIT  60000
 
 
+// Both these should be true for normal operation
+#define TEST_WITHOUT_PHASE  false
+#define DISABLE_TILT_ON_TOO_MANY_RETRY  false
+ 
+
 
 #endif

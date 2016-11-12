@@ -21,6 +21,7 @@ bool PHASE_BROKEN = false;
 
 void phase_test() {
 
+  if (TEST_WITHOUT_PHASE) return;
   char buff[10];
 
   long milliprint = millis();
@@ -48,6 +49,8 @@ void phase_test() {
 
 
 void phase_calibrate() {
+
+  if (TEST_WITHOUT_PHASE) return;
 
   int max1 = 0, min1 = 1024, max2 = 0, min2 = 1024;
   phase_forward();
@@ -101,6 +104,8 @@ void phase_calibrate() {
 float phase_read() {
 
 
+  if (TEST_WITHOUT_PHASE) return 0;
+
   phase_sense1 = analogRead(SENS1_PIN);
   phase_sense2 = analogRead(SENS2_PIN);
 
@@ -125,6 +130,8 @@ void phase_forward() {
 
 
 void phase_set(int phaseNew) {
+
+  if (TEST_WITHOUT_PHASE) return;
 
   if (PHASE_BROKEN) return;
 
@@ -198,6 +205,7 @@ void phase_set(int phaseNew) {
 
 
 void phase_back() {
+  if (TEST_WITHOUT_PHASE) return;
 
   digitalWrite(MOTOR_NEG_PIN, HIGH);
   digitalWrite(MOTOR_POS_PIN, LOW);
@@ -206,6 +214,7 @@ void phase_back() {
 
 void phase_halt()
 {
+  if (TEST_WITHOUT_PHASE) return;
   digitalWrite(MOTOR_NEG_PIN, LOW);
   digitalWrite(MOTOR_POS_PIN, LOW);
 }
@@ -213,6 +222,8 @@ void phase_halt()
 
 void phase_setup()
 {
+
+  if (TEST_WITHOUT_PHASE) return;
 
   pinMode(MOTOR_POS_PIN, OUTPUT);
   pinMode(MOTOR_NEG_PIN, OUTPUT);

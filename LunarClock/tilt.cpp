@@ -70,9 +70,9 @@ void tilt_set(float ang, int maxOnTime) {
 
       if (servo_retry_count > SERVO_MAX_TRY) {        // Servo is probably stuck abort
         myprintf(F(" SERVO DETACHING(RETRY LIMIT EXCEEDED)   %d   %ld\n>" ), servo_retry_count, errMax);
-        ui_fatal(F("SERVO RETRY LIMIT REACHED"));
+        if (DISABLE_TILT_ON_TOO_MANY_RETRY) ui_fatal(F("SERVO RETRY LIMIT REACHED"));
         servo_retry_flag = false;
-        TILT_BROKEN = true;
+        if (DISABLE_TILT_ON_TOO_MANY_RETRY) TILT_BROKEN = true;
       } else {
         myprintf(F(" SERVO DETACHING(WILL RETRY)   %d   %ld\n>" ), servo_retry_count, errMax);
       }
@@ -84,7 +84,6 @@ void tilt_set(float ang, int maxOnTime) {
   }
 
 
-
   long err = tNow - tNext;
 
   if (err < 0) return;  //  not reached tNext yet
@@ -94,6 +93,7 @@ void tilt_set(float ang, int maxOnTime) {
   if (!(servo_pos == servo_pos_last) || servo_retry_flag ) {   // start the servo running if postion has changed or retry has been requested
     if (!servo_retry_flag) {
       myprintf(F("\n Setting SERVO @ %d.%d(deg)  %d(us)  .. please wait .. "), (int)floor(ang), (int)(10 * (ang - floor(ang))), servo_pos);
+      servo_retry_count=0;
     } else {
       myprintf(F("\n Retry   SERVO @ %d.%d(deg)  %d(us)  .. please wait .. "), (int)floor(ang), (int)(10 * (ang - floor(ang))), servo_pos);
     }
