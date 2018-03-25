@@ -4,10 +4,9 @@
 // Interface to the tilt servo system.
 
 #define SERVO_MAX_ATTACH_TIME  2000
-#define SERVO_RETRY_TIME    50
-#define SERVO_MAX_TRY 50
-#define SERVO_RETRY_DELAY 1000
-#define LOW_VOLT 750
+#define SERVO_MAX_TRY            20
+#define SERVO_RETRY_DELAY      1000
+#define LOW_VOLT                760
 
 
 // absolute SERVO LIMITS in microseconds for servo pulse
