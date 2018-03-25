@@ -5,25 +5,17 @@
 #include "eeprom.h"
 #include "global.h"
 #include "ui.h"
+#include "servo.h"
 
-#include <Servo.h>
-
-Servo myservo;
 
 bool tilt_low_volt = false;
 int servo_pos = 0;
 int servo_retry_count = 0;
 bool TILT_BROKEN = false;
 
-void tilt_setup()
-{
+void tilt_setup() {
 
-  // tilt_set(0.0,0);
-}
-
-
-static int readServoV() {
-  return analogRead(SERVO_VOLT_PIN);
+  // nothing to do here
 }
 
 // Set the servo limits.
@@ -33,9 +25,6 @@ void tilt_setLimits(int d, int u) {
 }
 
 
-bool tilt_running() {
-  return myservo.attached();
-}
 
 // This must be called as manty times as possible whilst servo is active.
 //  0 degrees is center.
@@ -50,21 +39,21 @@ void tilt_set(float ang, int maxOnTime) {
   static long errMax = 0;
   static long tNext = 0;
 
-  float fact1 = (TILT_ANG_UP - ang) / (TILT_ANG_UP - TILT_ANG_DOWN);
+  float fact1 = (TILT_ANG_UP - ang*tilt_parity) / (TILT_ANG_UP - TILT_ANG_DOWN);
   fact1 = min(1.0, max(0.0, fact1));
   servo_pos = tilt_servoDownLimit * fact1 + tilt_servoUpLimit * (1.0 - fact1);
 
 
   // check for low voltage (servo is really active).
-  int servoV = readServoV();
+  int servoV = servo_readV();
 
 
   long tNow = millis();
 
   if (servoV < LOW_VOLT ) {
     myprintf(F(" Low servo voltage %d \n"), servoV);
-    if (myservo.attached()) {
-      myservo.detach();
+    if (servo_attached()) {
+      servo_detach();
       servo_retry_flag = true;
       servo_retry_count++;
 
@@ -97,8 +86,9 @@ void tilt_set(float ang, int maxOnTime) {
     } else {
       myprintf(F("\n Retry   SERVO @ %d.%d(deg)  %d(us)  .. please wait .. "), (int)floor(ang), (int)(10 * (ang - floor(ang))), servo_pos);
     }
-    myservo.attach(SERVO_PIN);
-    myservo.writeMicroseconds(servo_pos);
+    servo_attach();
+  
+    servo_writeMs(servo_pos);
     servo_pos_last = servo_pos;
     servo_on_time = tNow;
     servo_retry_flag = false;
@@ -112,7 +102,7 @@ void tilt_set(float ang, int maxOnTime) {
   }
 
   // if servo is not running we have nothing to do.
-  if (!myservo.attached()) {
+  if (!servo_attached()) {
     return;
   }
 
@@ -124,7 +114,7 @@ void tilt_set(float ang, int maxOnTime) {
     myprintf(F(" SERVO DETACHING  (OK)   %d   %ld\n>" ), servo_retry_count, errMax);
     servo_retry_flag = false;
     servo_retry_count = 0;
-    myservo.detach();
+    servo_detach();
   }
 
   tNext += DT;

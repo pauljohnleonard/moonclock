@@ -2,6 +2,7 @@
 #ifndef _PINS_H
 #define _PINS_H
 
+#include <Arduino.h>
 
 //PIN ALLOCATION
 

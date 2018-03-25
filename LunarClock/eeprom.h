@@ -5,6 +5,7 @@
 // set microseconds for MAX and MIN ANG
 extern int tilt_servoDownLimit;
 extern int tilt_servoUpLimit;
+extern int tilt_parity;
 
 // phase offset for moon in degs
 extern  int phase_Offset;

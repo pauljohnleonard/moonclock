@@ -1,5 +1,6 @@
 // Lunar Clock Arduino code
 // P.J.Loeanrd 2016
+// March 2018  switch the tilt sign for new servo
 // https://github.com/pauljohnleonard/moonclock
 //---------------------------------------------------
 
@@ -12,6 +13,7 @@
 #include "myio.h"
 #include "eeprom.h"
 #include "global.h"
+#include "servo.h"
 
 void update_moon_state() {
 
@@ -29,12 +31,12 @@ void loop() {
   ui_display_led();                              // We must have flashing LEDS!!!!!
   ui_poll();                                     // poll for user interaction
 
-  if (!tilt_running()) update_moon_state();      // use the RTC to update the moon model.
+  if (!servo_attached()) update_moon_state();      // use the RTC to update the moon model.
 
   // If the system is running set tilt and phase
   if (RUNNING) {                                // don't try to use the phase system if not RUNNING.
     tilt_set(moon_tilt, SERVO_MAX_ATTACH_TIME);     // limit servo time tmillis (Note return straight away);
-    if (!tilt_running()) phase_set(moon_phase); // Don't try to set phase if the tilt servo is active.
+    if (!servo_attached()) phase_set(moon_phase); // Don't try to set phase if the tilt servo is active.
   } else {
     tilt_set(ui_tilt, SERVO_MAX_ATTACH_TIME);                    // System not running so set tilt the user set value.
   }

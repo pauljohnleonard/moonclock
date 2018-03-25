@@ -5,9 +5,9 @@
 
 #define DEBUG(x) myprintf(F(x));
 
-
+#ifndef M_PI
 #define M_PI 3.141592653589793238462643
-
+#endif
 
 // maximum time to try and set the phase
 // If we reach this without success then halt the system.

@@ -13,6 +13,7 @@ int sensor1_max = 908;
 int sensor1_min = 115;
 int sensor2_max = 916;
 int sensor2_min = 111;
+int tilt_parity = 1;
 
 static const int MAGIC = 0;
 
@@ -42,6 +43,7 @@ static void eeprom_default() {
   sensor1_min = 115;
   sensor2_max = 916;
   sensor2_min = 111;
+  tilt_parity=1;
 }
 
 
@@ -66,6 +68,7 @@ void eeprom_read() {
   myget(i++, sensor1_max);
   myget(i++, sensor2_min);
   myget(i++, sensor2_max);
+  myget(i++, tilt_parity);
 
 }
 
@@ -82,6 +85,7 @@ void eeprom_write() {
   myput(i++, sensor1_max);
   myput(i++, sensor2_min);
   myput(i++, sensor2_max);
+  myput(i++, tilt_parity);
 
 }
 

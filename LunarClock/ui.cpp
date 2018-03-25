@@ -9,6 +9,7 @@
 #include "eeprom.h"
 #include "moon.h"
 #include "pins.h"
+#include "servo.h"
 
 
 bool RUNNING = true;  // System is up and running
@@ -75,7 +76,7 @@ void ui_display_led() {
     if (flash) G = LOW;
   }
 
-  if (tilt_running()) {
+  if (servo_attached()) {
     B = LOW;
   }
 
@@ -140,14 +141,14 @@ void _ui_printState() {
 
   float phaseAng = phase_read();
 
-  myprintf(F("** PHASE DRIVE SYSTEM\n"));
+  myprintf(F("**   PHASE DRIVE SYSTEM\n"));
   myprintf(F("    phaseOffset : %d\n"), phase_Offset);
   myprintf(F(" Sensors range  : %d->%d  %d->%d\n"), sensor1_min, sensor1_max, sensor2_min, sensor2_max);
   myprintf(F(" Sensor state   : ang=%s v1=%d v2=%d \n"), myf2str(phaseAng), phase_sense1, phase_sense2);
 
   myprintf(F("** TILT DRIVE SYSTEM\n"));
-  myprintf(F(" servo state    : %d->%d->%d\n"), tilt_servoDownLimit, servo_pos, tilt_servoUpLimit);
-
+  myprintf(F(" servo state    : %d->%d->%d   parity: %d\n"), tilt_servoDownLimit, servo_pos, tilt_servoUpLimit,tilt_parity);
+ 
 
   myprintf(F("** LUNAR \n"));
   myprintf(F("       JH index : %d\n"), data_index());
@@ -192,6 +193,7 @@ void ui_welcome() {
 
   myprintf( F("Phase offset   : O degree\n"));
   myprintf( F("Servo range(us): t min max\n"));
+  myprintf( F("Servo partity  : p -1 | 1\n"));
   myprintf( F("PhaseSensor Cal: C\n"));
   myprintf( F("Write to EEPROM: W\n"));
 
@@ -311,6 +313,13 @@ static void ui_command(char *cmd) {
       if (tok == NULL) goto INVALID;
       u = in_range(SERVO_MID, SERVO_MAX, atoi(tok));
       tilt_setLimits(d, u);
+      break;
+      
+    case 'p':
+      tok = strtok(cmd, " :");
+      tok = strtok(NULL, " ");
+      if (tok == NULL) goto INVALID;
+      tilt_parity = atoi(tok) ;
       break;
 
     case 'S':

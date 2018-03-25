@@ -27,12 +27,7 @@ void writeBuf(Stream *x, char * buff) {
   }
 }
 
-void myprintln() {
 
-
-  writeBuf(serial, "\n");
-
-}
 
 void myprintf(const char *fmt, ... ) {
   va_list args;
@@ -67,6 +62,12 @@ void myprintf(const __FlashStringHelper *format, ...)
 #endif
 
 
+void myprintln() {
+
+  myprintf(F("\n"));
+  // writeBuf(serial, '\n');
+
+}
 
 void myflush() {
   delay(10);
